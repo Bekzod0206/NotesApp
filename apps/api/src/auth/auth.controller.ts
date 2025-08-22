@@ -1,6 +1,8 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
-import { SignUpDto } from './dto/auth.dto';
+import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { LogInDto, SignUpDto } from './dto/auth.dto';
 import { AuthService } from './auth.service';
+import { AuthGuard } from '@nestjs/passport';
+import { CurrentUser } from './decorators/current-user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -13,7 +15,13 @@ export class AuthController {
 
   @HttpCode(200)
   @Post('login')
-  async logIn(@Body() dto: SignUpDto) {
+  async logIn(@Body() dto: LogInDto) {
     return this.authService.logIn(dto.email, dto.password);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me')
+  me(@CurrentUser() user: { sub: number, email: string }) {
+    return user;
   }
 }

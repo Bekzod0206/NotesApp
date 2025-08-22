@@ -10,7 +10,7 @@ export class SignUpDto {
   password: string;
 }
 
-export class LogIn {
+export class LogInDto {
   @IsEmail()
   email: string;
 

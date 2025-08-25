@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { NotesService } from './notes.service';
-import { CreateNoteDto, UpdateNoteDto } from './dto/note.dto';
+import { CreateNoteDto, ListNotesQueryDto, UpdateNoteDto } from './dto/note.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
@@ -16,8 +16,11 @@ export class NotesController {
   }
 
   @Get()
-  findAll(@CurrentUser() user: { sub: number, email: string }){
-    return this.notesService.getAllNotes(user.sub);
+  findAll(
+    @CurrentUser() user: { sub: number, email: string },
+    @Query() query: ListNotesQueryDto
+  ){
+    return this.notesService.getAllNotes(user.sub, query);
   }
 
   @Patch(':id')

@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/module/prisma/prisma.service';
+import { ListNotesQueryDto, SortOrder } from './dto/note.dto';
 
 @Injectable()
 export class NotesService {
@@ -10,8 +11,28 @@ export class NotesService {
     return this.prisma.note.create({data: { title, content, userId: Number(userId) }});
   }
 
-  async getAllNotes(userId: number) {
-    return this.prisma.note.findMany({ where: { userId: Number(userId) }, orderBy: {createdAt: 'desc'} });
+  async getAllNotes(
+    userId: number,
+    { limit = 10, cursor, sort = 'desc' as SortOrder }: ListNotesQueryDto
+  ){
+    const take = Math.min(Math.max(limit, 1), 50) + 1;
+    const where = { userId };
+    const orderBy = { createdAt: sort };
+
+    const notes = await this.prisma.note.findMany({
+      where,
+      orderBy,
+      take,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      // where: { userId: Number(userId) }, orderBy: {createdAt: 'desc'}
+    });
+
+    let nextCursor: number | undefined;
+    if(notes.length === take) {
+      const nextItem = notes.pop()!;
+      nextCursor = nextItem.id;
+    }
+    return { notes, nextCursor };
   }
 
   async updateNote(id: number, userId: number, title: string | null, content: string | null) {

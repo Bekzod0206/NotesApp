@@ -13,10 +13,20 @@ export class AuthService {
 
   async logIn(email: string, password: string) {
     const user = await this.users.findByEmail(email);
-    if(!user) throw new UnauthorizedException('User not found');
+    if(!user) {
+      throw new UnauthorizedException({
+        message: 'Invalid Email or Password',
+        code: 'INVALID_CREDENTIALS'
+      })
+    }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    if(!isPasswordValid) throw new UnauthorizedException('Invalid password');
+    if(!isPasswordValid) {
+      throw new UnauthorizedException({
+        message: 'Invalid Email or Password',
+        code: 'INVALID_CREDENTIALS'
+      })
+    }
 
     const payload = { email: user.email, sub: user.id };
     const accessToken = await this.jwt.signAsync(payload);

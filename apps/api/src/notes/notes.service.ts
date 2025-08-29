@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/module/prisma/prisma.service';
-import { ListNotesQueryDto, SortOrder } from './dto/note.dto';
+import { ListNotesQueryDto, SortOrder, UpdateNoteDto } from './dto/note.dto';
 
 @Injectable()
 export class NotesService {
@@ -35,18 +35,28 @@ export class NotesService {
     return { notes, nextCursor };
   }
 
-  async updateNote(id: number, userId: number, title: string | null, content: string | null) {
-    const {count} = await this.prisma.note.updateMany({
-      where: { id: Number(id) },
-      data: { ...(title !== null && {title}), ...(content !== null && {content}) }
-    });
-    if(count === 0) throw new NotFoundException(`Note with id ${id} not found`);
-    return this.prisma.note.findFirst({ where: { id: Number(id), userId: Number(userId) } });
+  async updateNote(id: number, userId: number, dto: UpdateNoteDto) {
+    const note = await this.prisma.note.findFirst({ where: { id, userId }})
+    if(!note) {
+      throw new NotFoundException({
+        message: `Note with id ${id} not found`,
+        code: 'NOTE_NOT_FOUND'
+      })
+    }
+    return this.prisma.note.update({
+      where: { id },
+      data: { ...dto }
+    })
   }
 
   async deleteNote(id: number, userId: number) {
     const deletedNotes = await this.prisma.note.deleteMany({ where: { id: Number(id), userId: Number(userId) }})
-    if(deletedNotes.count === 0) throw new NotFoundException(`Note with id ${id} not found`);
+    if(deletedNotes.count === 0) {
+      throw new NotFoundException({
+        message: `Note with id ${id} not found`,
+        code: 'NOTE_NOT_FOUND'
+      });
+    }
     return { success: true }
   }
 }

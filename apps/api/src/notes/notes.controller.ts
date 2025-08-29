@@ -25,11 +25,11 @@ export class NotesController {
 
   @Patch(':id')
   update(@Param("id", ParseIntPipe) id: number, @Body() dto: UpdateNoteDto, @CurrentUser() user: { sub: number, email: string }){
-    return this.notesService.updateNote(id, user.sub, dto.title ?? null, dto.content ?? null);
+    return this.notesService.updateNote(id, user.sub, dto);
   }
 
   @Delete(':id')
-  remove(@Param("id", ParseIntPipe) id: number, @CurrentUser() user: { sub: number, email: string }) {
+  remove(@Param("id", ParseIntPipe) id: number, @CurrentUser() user: { sub: number }) {
     return this.notesService.deleteNote(id, user.sub);
   }
 }

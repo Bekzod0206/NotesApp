@@ -23,6 +23,11 @@ export class NotesController {
     return this.notesService.getAllNotes(user.sub, query);
   }
 
+  @Get(':id')
+  findOne(@Param("id", ParseIntPipe) id: number, @CurrentUser() user: { sub: number }) {
+    return this.notesService.getNoteById(id, user.sub);
+  }
+
   @Patch(':id')
   update(@Param("id", ParseIntPipe) id: number, @Body() dto: UpdateNoteDto, @CurrentUser() user: { sub: number, email: string }){
     return this.notesService.updateNote(id, user.sub, dto);

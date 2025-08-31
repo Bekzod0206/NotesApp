@@ -6,9 +6,10 @@ import { NotesModule } from './notes/notes.module';
 import { PrismaModule } from './module/prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { RequestIdMiddleware } from './common/middleware/requestId.middleware';
+import { CacheModule } from './module/cache/cache.module';
 
 @Module({
-  imports: [UsersModule, NotesModule, PrismaModule, AuthModule],
+  imports: [UsersModule, NotesModule, PrismaModule, AuthModule, CacheModule],
   controllers: [AppController],
   providers: [AppService],
 })

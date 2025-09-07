@@ -1,4 +1,4 @@
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from "class-validator";
 
 export enum SortOrder {
@@ -26,6 +26,11 @@ export class UpdateNoteDto {
 }
 
 export class ListNotesQueryDto {
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  query?: string;
+
   @IsOptional()
   @Type(() => Number)
   @IsInt()

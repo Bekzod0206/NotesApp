@@ -7,8 +7,8 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private client: Redis;
 
   onModuleInit() {
-    const url = process.env.REDIS_URL ?? "redis://127.0.0.1:6379";
-    this.client = new Redis(url);
+    const url = process.env.REDIS_URL;
+    this.client = url ? new Redis(url) : new Redis();
   }
 
   onModuleDestroy() {
@@ -32,11 +32,20 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async delByPattern(pattern: string): Promise<number> {
-    const keys = await this.client.keys(pattern);
-    if(!keys.length) return 0;
-    await this.client.del(...keys);
-    return keys.length;
+  async delByPrefix(pattern: string): Promise<number> {
+    const stream = this.client.scanStream({ match: `${pattern}*`, count: 100});
+    const toDel: string[] = [];
+
+    await new Promise<void>((resolve, reject) => {
+      stream.on('data', (keys: string[]) => {
+        if(keys.length) toDel.push(...keys);
+      });
+      stream.on('end', () => resolve);
+      stream.on('error', () => reject);
+    });
+
+    if(toDel.length) await this.client.del(...toDel);
+    return toDel.length;
   }
 
   async ping(): Promise<string> {

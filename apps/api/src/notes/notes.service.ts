@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PrismaService } from 'src/module/prisma/prisma.service';
 import { CacheService } from 'src/module/cache/cache.service';
 import { ListNotesQueryDto, SortOrder, UpdateNoteDto } from './dto/note.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class NotesService {
@@ -10,40 +11,58 @@ export class NotesService {
     private cache: CacheService
   ) {}
 
+  private userNotesPrefix(userId: number) {
+    return `u:${userId}:notes:`;
+  }
+
+  private listCacheKey (userId: number,  params: { sort: SortOrder; query?: string; limit: number; cursor?: number }) {
+    const base = this.userNotesPrefix(userId);
+    const q = params.query ? encodeURIComponent(params.query) : '';
+    const cur = params.cursor ?? '';
+    return `${base}list:sort=${params.sort}:q=${q}:c=${cur}:l=${params.limit}`;
+  }
+
   async createNote(title: string, content: string | null, userId: number) {
     if(!title) throw new BadRequestException("Title is required");
 
     const created = await this.prisma.note.create({data: { title, content, userId: Number(userId) }});
 
-    await this.cache.delByPattern(`u:${userId}:notes:list*`);
-    await this.cache.del(`u:${userId}:notes:${created.id}`);
+    await this.cache.delByPrefix(this.userNotesPrefix(userId));
+    await this.cache.del(`u:${userId}:note:${created.id}`);
 
     return created;
   }
 
   async getAllNotes(
     userId: number,
-    { limit = 10, cursor, sort = 'desc' as SortOrder }: ListNotesQueryDto
+    { limit = 10, cursor, sort = 'desc' as SortOrder, query }: ListNotesQueryDto
   ){
 
-    const safeLimit = Math.min(Math.max(limit, 1), 50);
-    const key = `u:${userId}:notes:list:sort=${sort}:cursor=${cursor || 'null'}:limit=${safeLimit}`;
-    
-    // Try to get from cache
-    const cached = await this.cache.get<{ notes: any[], nextCursor?: number }>(key);
-    if(cached) {
-      return {...cached, fromCache: true};
-    }
+    const take = Math.min(Math.max(limit, 1), 50) + 1;
+    const where: Prisma.NoteWhereInput = { userId, 
+      ...(query ? {
+        OR: [
+          {title: { contains: query, mode: 'insensitive' }},
+          {content: { contains: query, mode: 'insensitive' }}
+        ]
+      } : {}),
+    };
 
-    const take = safeLimit + 1;
-    const where = { userId };
-    const orderBy = { createdAt: sort };
+    const orderBy: Prisma.NoteOrderByWithRelationInput[] = [
+      { createdAt: sort },
+      { id: sort }
+    ]
+
+    const cacheKey = this.listCacheKey(userId, { sort, query, limit, cursor });
+    const cached = await this.cache.get<{ notes: any[]; nextCursor?: number }>(cacheKey)
+    if(cached) return { ...cached, fromCache: true };
 
     const notes = await this.prisma.note.findMany({
       where,
       orderBy,
       take,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      select: { id: true, title: true, content: true, createdAt: true, updatedAt: true},
     });
 
     let nextCursor: number | undefined;
@@ -52,12 +71,8 @@ export class NotesService {
       nextCursor = nextItem.id;
     }
 
-    const payload = { notes, nextCursor };
-    
-    // Store in cache for 60 seconds
-    await this.cache.set(key, payload, 60);
-
-    return payload;
+    await this.cache.set(cacheKey, { notes, nextCursor }, 60);
+    return { notes, nextCursor };
   }
 
   async getNoteById(id: number, userId: number) {
@@ -86,16 +101,13 @@ export class NotesService {
         code: 'NOTE_NOT_FOUND'
       })
     }
-    const updated = this.prisma.note.update({
+    const updated = await this.prisma.note.update({
       where: { id },
       data: { ...dto }
     })
 
-    await this.cache.del([
-      `u:${userId}:notes:${id}`,
-    ])
-    await this.cache.delByPattern(`u:${userId}:notes:list*`);
-
+    await this.cache.delByPrefix(this.userNotesPrefix(userId));
+    await this.cache.del(`u:${userId}:note:${id}`);
     return updated;
   }
 
@@ -108,11 +120,8 @@ export class NotesService {
       });
     }
 
-    await this.cache.del([
-      `u:${userId}:notes:${id}`,
-    ])
-    await this.cache.delByPattern(`u:${userId}:notes:list*`);
-    
-    return { success: true }
+    await this.cache.del(`u:${userId}:note:${id}`);
+    await this.cache.delByPrefix(this.userNotesPrefix(userId));
+    return { success: true };
   }
 }

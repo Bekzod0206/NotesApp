@@ -46,5 +46,6 @@ export class ListNotesQueryDto {
 
   @IsOptional()
   @IsEnum(SortOrder)
+  @Transform(({ value }) => (typeof value === 'string' ? value.toLowerCase() : value))
   sort?: SortOrder = SortOrder.DESC
 }

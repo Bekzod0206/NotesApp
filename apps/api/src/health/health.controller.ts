@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, HttpStatus } from "@nestjs/common";
+import { Controller, Get, HttpCode, HttpStatus, ServiceUnavailableException } from "@nestjs/common";
 import { CacheService } from "src/module/cache/cache.service";
 import { PrismaService } from "src/module/prisma/prisma.service";
 
@@ -19,6 +19,8 @@ export class HealthController {
   async ready() {
     let db = 'down';
     let redis = 'down';
+    const uptimeSec = Math.floor(process.uptime());
+    const version = process.env.APP_VERSION ?? 'dev';
 
     try {
       await this.prisma.$queryRaw`SELECT 1`;
@@ -36,11 +38,12 @@ export class HealthController {
 
     const ok = db === 'up' && redis === 'up';
     const payload = {
-      ok, db, redis
+      ok, db, redis, uptimeSec, version
     }
+    if(!ok) throw new ServiceUnavailableException(payload)
     return {
       ...payload,
-      status: ok ? 200 : 503
+      status: 200
     }
   }
 }

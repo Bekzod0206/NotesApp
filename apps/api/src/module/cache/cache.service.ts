@@ -40,8 +40,8 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       stream.on('data', (keys: string[]) => {
         if(keys.length) toDel.push(...keys);
       });
-      stream.on('end', () => resolve);
-      stream.on('error', () => reject);
+      stream.on('end', () => resolve());
+      stream.on('error', (err) => reject(err));
     });
 
     if(toDel.length) await this.client.del(...toDel);

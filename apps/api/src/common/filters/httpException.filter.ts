@@ -1,7 +1,5 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from "@nestjs/common";
-import { timestamp } from "rxjs";
 import { Prisma } from "@prisma/client";
-import { stat } from "fs";
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -56,7 +54,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
           code = 'PRISMA_P2002';
           const fields = (e.meta?.target as string[])?.join(', ') || 'unique field';
           message = `Duplicate value for ${fields}`;
-          error = httpStatusName[status] ?? 'Conflict';
+          error = httpStatusName(status) ?? 'Conflict';
           break;
         }
         default: {

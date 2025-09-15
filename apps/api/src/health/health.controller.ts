@@ -1,4 +1,5 @@
 import { Controller, Get, HttpCode, HttpStatus, ServiceUnavailableException } from "@nestjs/common";
+import { Public } from "src/auth/decorators/public.decorator";
 import { CacheService } from "src/module/cache/cache.service";
 import { PrismaService } from "src/module/prisma/prisma.service";
 
@@ -9,12 +10,14 @@ export class HealthController {
     private readonly cache: CacheService
   ) {}
 
+  @Public()
   @Get('live')
   @HttpCode(HttpStatus.OK)
   live() {
     return { ok: true, status: 'live' };
   }
 
+  @Public()
   @Get('ready')
   async ready() {
     let db = 'down';

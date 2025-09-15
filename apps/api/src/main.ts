@@ -3,6 +3,13 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { HttpExceptionFilter } from './common/filters/httpException.filter';
+import helmet from 'helmet';
+
+function parseOrigins(raw?: string): (string | RegExp)[] | boolean {
+  if(!raw) return false;
+  const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
+  return parts.length ? parts : false
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,7 +22,14 @@ async function bootstrap() {
 
   app.useGlobalInterceptors(new LoggingInterceptor());
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.enableCors();
+  app.use(helmet())
+  app.enableCors({
+    origin: parseOrigins(process.env.CORS_ORIGINS),
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['X-Request-Id'],
+  });
 
   await app.listen(process.env.PORT ?? 3000);
 }

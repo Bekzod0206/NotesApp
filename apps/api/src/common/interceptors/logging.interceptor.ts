@@ -1,6 +1,6 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { tap, timestamp } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
@@ -37,7 +37,21 @@ export class LoggingInterceptor implements NestInterceptor {
               })
             );
           },
-          error: (error) => {}
+          error: (err) => {
+            const durationMs = Date.now() - start;
+            console.log(JSON.stringify({
+              level: "error",
+              timestamp: new Date().toISOString(),
+              requestId,
+              method,
+              url,
+              status: res.statusCode,
+              durationMs,
+              userId,
+              ip,
+              err: { name: err?.name, message: err?.message },
+            }))
+          }
         }),
       );
   }

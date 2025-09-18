@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from 'src/module/prisma/prisma.service';
-import { CacheService } from 'src/module/cache/cache.service';
+import { PrismaService } from '../module/prisma/prisma.service';
+import { CacheService } from '../module/cache/cache.service';
 import { ListNotesQueryDto, SortOrder, UpdateNoteDto } from './dto/note.dto';
 import { Prisma } from '@prisma/client';
 

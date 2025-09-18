@@ -3,7 +3,7 @@ import { LogInDto, SignUpDto } from './dto/auth.dto';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { IpAuthRateGuard } from 'src/common/rate-limit/guards/ip-auth-rate.guard';
+import { IpAuthRateGuard } from '../common/rate-limit/guards/ip-auth-rate.guard'
 import { RefreshDto } from './dto/refresh.dto';
 import { Public } from './decorators/public.decorator';
 

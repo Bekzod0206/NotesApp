@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { CacheService } from "src/module/cache/cache.service";
+import { CacheService } from "../../module/cache/cache.service";
 
 export type RateCheck = {
   allowed: boolean;

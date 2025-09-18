@@ -1,7 +1,7 @@
 import { Controller, Get, HttpCode, HttpStatus, ServiceUnavailableException } from "@nestjs/common";
-import { Public } from "src/auth/decorators/public.decorator";
-import { CacheService } from "src/module/cache/cache.service";
-import { PrismaService } from "src/module/prisma/prisma.service";
+import { Public } from "../auth/decorators/public.decorator";
+import { CacheService } from "../module/cache/cache.service";
+import { PrismaService } from "../module/prisma/prisma.service";
 
 @Controller('health')
 export class HealthController {

@@ -2,8 +2,8 @@ import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query,
 import { NotesService } from './notes.service';
 import { CreateNoteDto, ListNotesQueryDto, UpdateNoteDto } from './dto/note.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
-import { UserWriteRateGuard } from 'src/common/rate-limit/guards/user-write-rate.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserWriteRateGuard } from '../common/rate-limit/guards/user-write-rate.guard';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('notes')

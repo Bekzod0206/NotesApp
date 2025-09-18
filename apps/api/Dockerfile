@@ -1,34 +1,32 @@
-# ---------- Build stage ----------
+# ---------- builder ----------
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Install deps
+# Install deps first (cacheable)
 COPY package*.json ./
-# If you have a lockfile, prefer "npm ci"
-RUN npm install
+RUN npm ci || npm install
 
-# Copy source
+# Copy source (schema, ts, etc.)
 COPY . .
 
-# Generate Prisma client and build Nest
-# (Make sure prisma/schema.prisma exists under /app/prisma)
+# Generate Prisma client into node_modules that BELONG TO THIS STAGE
 RUN npx prisma generate
+
+# Build TS -> dist
 RUN npm run build
 
-# ---------- Runtime stage ----------
+# ---------- runner ----------
 FROM node:20-alpine AS runner
 WORKDIR /app
-
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Copy only what's needed to run
+# Copy exactly the node_modules that already contain generated client
 COPY --from=builder /app/node_modules ./node_modules
+# Copy built app and schema
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY package*.json ./
 
 EXPOSE 3000
-
-# Run migrations, then start the app
-CMD sh -c "npx prisma migrate deploy && node dist/main.js"
+CMD sh -lc "npx prisma migrate deploy && node dist/main.js"

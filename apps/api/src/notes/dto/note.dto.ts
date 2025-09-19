@@ -1,3 +1,4 @@
+import { ApiProperty } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from "class-validator";
 
@@ -6,20 +7,24 @@ export enum SortOrder {
   DESC = 'desc'
 }
 export class CreateNoteDto {
+  @ApiProperty({ example: 'Shopping list' })
   @IsString()
   @IsNotEmpty()
   title: string;
 
+  @ApiProperty({ example: 'Shopping list content' })
   @IsString()
   @IsOptional()
   content?: string;
 }
 
 export class UpdateNoteDto {
+  @ApiProperty({ example: 'Shopping list' })
   @IsString()
   @IsOptional()
   title?: string;
 
+  @ApiProperty({ example: 'Shopping list content' })
   @IsString()
   @IsOptional()
   content?: string;

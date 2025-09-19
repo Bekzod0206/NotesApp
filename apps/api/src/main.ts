@@ -4,11 +4,33 @@ import { ValidationPipe } from '@nestjs/common';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { HttpExceptionFilter } from './common/filters/httpException.filter';
 import helmet from 'helmet';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 function parseOrigins(raw?: string): (string | RegExp)[] | boolean {
   if(!raw) return false;
   const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
   return parts.length ? parts : false
+}
+
+function enableSwagger(app: any) {
+  const isProd = process.env.NODE_EV === 'production';
+  const allowedInProd = process.env.SWAGGER_ENABLED === 'true'
+  if(isProd && !allowedInProd) return;
+
+  const config = new DocumentBuilder()
+    .setTitle('NotesApp API')
+    .setDescription('NestJS + Prisma + Postgres')
+    .setVersion(process.env.APP_VERSION || 'dev')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'BearerAuth',
+    )
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: { persistAuthorization: true },
+  })
 }
 
 async function bootstrap() {
@@ -30,6 +52,9 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
     exposedHeaders: ['X-Request-Id'],
   });
+
+  // Swagger setup
+  enableSwagger(app);
 
   await app.listen(process.env.PORT ?? 3000);
 }
